@@ -565,7 +565,7 @@ fn get_last_link(links: &mut [SummaryItem]) -> Result<(usize, &mut Link)> {
 
 /// Removes the styling from a list of Markdown events and returns just the
 /// plain text.
-fn stringify_events(events: Vec<Event<'_>>) -> String {
+pub fn stringify_events(events: Vec<Event<'_>>) -> String {
     events
         .into_iter()
         .filter_map(|t| match t {

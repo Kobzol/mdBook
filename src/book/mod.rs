@@ -8,7 +8,7 @@
 #[allow(clippy::module_inception)]
 mod book;
 mod init;
-mod summary;
+pub(crate) mod summary;
 
 pub use self::book::{load_book, Book, BookItem, BookItems, Chapter};
 pub use self::init::BookBuilder;
