@@ -112,7 +112,7 @@ impl HtmlHandlebars {
         playpen_config: &Playpen,
         edition: Option<RustEdition>,
     ) -> String {
-        let rendered = build_header_links(&rendered);
+        // let rendered = build_header_links(&rendered);
         let rendered = fix_code_blocks(&rendered);
         let rendered = add_playpen_pre(&rendered, playpen_config, edition);
 

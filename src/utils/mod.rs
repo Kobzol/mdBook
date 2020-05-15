@@ -10,11 +10,14 @@ use pulldown_cmark::{html, CowStr, Event, Options, Parser, Tag};
 use std::borrow::Cow;
 use std::fmt::Write;
 use std::path::Path;
+use crate::book::summary::stringify_events;
 
 pub use self::string::{
     take_anchored_lines, take_lines, take_rustdoc_include_anchored_lines,
     take_rustdoc_include_lines,
 };
+use std::collections::HashMap;
+use itertools::Itertools;
 
 /// Replaces multiple consecutive whitespace characters with a single space character.
 pub fn collapse_whitespace(text: &str) -> Cow<'_, str> {
@@ -180,7 +183,69 @@ pub fn render_markdown_with_path(text: &str, curly_quotes: bool, path: Option<&P
     let mut s = String::with_capacity(text.len() * 3 / 2);
     let p = new_cmark_parser(text);
     let mut converter = EventQuoteConverter::new(curly_quotes);
-    let events = p
+
+    let mut events = vec!();
+    let mut in_sidenote = false;
+    let mut side_note_events: Vec<Event<'_>> = vec!();
+    let mut sidenote_counter = 0;
+    let mut last_text: i64 = -1;
+
+    let mut sidenote_position: HashMap<String, usize> = HashMap::new();
+    let mut sidenotes: Vec<(usize, String)> = vec!();
+
+    for event in p {
+        match &event {
+            Event::FootnoteReference(label) => {
+                events.push(Event::Html(format!("<label class='margin-toggle sidenote-number'></label>").into()));
+                assert!(sidenote_position.insert(label.to_string(), events.len()).is_none());
+            }
+            Event::Start(Tag::FootnoteDefinition(label)) => {
+                assert!(!in_sidenote);
+                in_sidenote = true;
+                sidenote_counter += 1;
+            },
+            Event::End(Tag::FootnoteDefinition(label)) => {
+                assert!(in_sidenote);
+                in_sidenote = false;
+
+                let mut html = String::new();
+                html::push_html(&mut html, std::mem::take(&mut side_note_events).into_iter());
+                let html = html.trim_start_matches("<p>");
+                let html = html.trim_end_matches("</p>");
+                sidenotes.push((*sidenote_position.get(label.as_ref()).unwrap(), html.to_string()));
+            },
+            _ => {
+                if in_sidenote {
+                    side_note_events.push(event);
+                }
+                else {
+                    if let Event::Text(_) | Event::Html(_) = event {
+                        last_text = events.len() as i64;
+                    }
+
+                    events.push(event);
+                }
+            }
+        }
+    }
+
+    sidenotes.sort_by_key(|i| i.0);
+
+    for sidenote in sidenotes.into_iter().rev() {
+        let start_index = sidenote.0;
+        let insert_position = events.iter().skip(start_index).find_position(|e| {
+            if let Event::End(Tag::Paragraph) = e {
+                true
+            } else {
+                false
+            }
+        }).unwrap().0;
+
+        events.insert(sidenote.0 + insert_position + 1, Event::Html(format!("<span class='sidenote'>{}</span>", sidenote.1).into()));
+    }
+
+    let events = events
+        .into_iter()
         .map(clean_codeblock_headers)
         .map(|event| adjust_links(event, path))
         .map(|event| converter.convert(event));
