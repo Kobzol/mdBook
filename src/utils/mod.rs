@@ -188,7 +188,7 @@ pub fn render_markdown_with_path(text: &str, curly_quotes: bool, path: Option<&P
     let mut events = vec!();
     let mut in_sidenote = false;
     let mut side_note_events: Vec<Event<'_>> = vec!();
-    let mut sidenote_counter = 0;
+    let mut sidenote_counter = 1;
     let mut last_text: i64 = -1;
 
     let mut sidenote_position: HashMap<String, usize> = HashMap::new();
@@ -211,8 +211,11 @@ pub fn render_markdown_with_path(text: &str, curly_quotes: bool, path: Option<&P
 
                 let mut html = String::new();
                 html::push_html(&mut html, std::mem::take(&mut side_note_events).into_iter());
-                let html = html.trim_start_matches("<p>");
-                let html = html.trim_end_matches("</p>");
+
+                let paragraph_text = "<p>";
+                let paragraph_index = html.find(paragraph_text).expect("Paragraph not found");
+                html.insert_str(paragraph_index + paragraph_text.len(), &format!("<sup class='number'>{}</sup>", label));
+
                 sidenotes.push((*sidenote_position.get(label.as_ref()).unwrap(), html.to_string()));
             },
             _ => {
