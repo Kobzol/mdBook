@@ -166,7 +166,7 @@ impl HtmlHandlebars {
         playground_config: &Playground,
         edition: Option<RustEdition>,
     ) -> String {
-        // let rendered = build_header_links(&rendered);
+        let rendered = build_header_links(&rendered);
         let rendered = fix_code_blocks(&rendered);
         let rendered = add_playground_pre(&rendered, playground_config, edition);
 
