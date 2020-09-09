@@ -197,7 +197,7 @@ pub fn render_markdown_with_path(text: &str, curly_quotes: bool, path: Option<&P
     for event in p {
         match &event {
             Event::FootnoteReference(label) => {
-                events.push(Event::Html(format!("<label class='margin-toggle sidenote-number'></label>").into()));
+                events.push(Event::Html(format!("<sup class='margin-toggle sidenote-number'>{}</label>", label).into()));
                 assert!(sidenote_position.insert(label.to_string(), events.len()).is_none());
             }
             Event::Start(Tag::FootnoteDefinition(label)) => {

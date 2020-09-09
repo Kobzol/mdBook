@@ -28,9 +28,9 @@ jobs:
           env:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           with:
-            tag_name: master
-            release_name: master
-            body: Master release
+            tag_name: release
+            release_name: release
+            body: Release for UPR
             draft: false
             prerelease: false
         - name: Upload mdbook
