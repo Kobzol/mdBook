@@ -237,15 +237,15 @@ pub fn render_markdown_with_path(text: &str, curly_quotes: bool, path: Option<&P
 
     for sidenote in sidenotes.into_iter().rev() {
         let start_index = sidenote.0;
-        let insert_position = events.iter().skip(start_index).find_position(|e| {
-            if let Event::End(Tag::Paragraph) = e {
-                true
-            } else {
-                false
+        let insert_position = events.iter().skip(start_index).enumerate().find_map(|(pos, tag)|
+            match tag {
+                Event::End(Tag::Paragraph) => Some(pos + 1),
+                Event::End(Tag::Item) => Some(pos),
+                _ => None
             }
-        }).unwrap().0;
+        ).unwrap_or(start_index);
 
-        events.insert(sidenote.0 + insert_position + 1, Event::Html(format!("<span class='sidenote'>{}</span>", sidenote.1).into()));
+        events.insert(sidenote.0 + insert_position, Event::Html(format!("<span class='sidenote'>{}</span>", sidenote.1).into()));
     }
 
     let events = events
